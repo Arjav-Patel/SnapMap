@@ -192,7 +192,7 @@ if __name__ == '__main__':
     parser.add_argument("--levels_path", default='./Assets/Resources/Levels/')
     parser.add_argument("--sprites_path", default='./Assets/Resources/Sprites/')
     parser.add_argument('--data_path', default='./Assets/Data/')
-    parser.add_argument('--multiscale', default=False)
+    parser.add_argument('--multiscale', type=bool, default=False)
 
 
     args = parser.parse_args()
