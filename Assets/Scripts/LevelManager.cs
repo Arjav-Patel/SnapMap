@@ -5,39 +5,42 @@ using UnityEditor;
 using UnityEngine;
 
 public class LevelManager : MonoBehaviour
-{
-    public float UnitBlockWidth;
-    public float UnitBlockHeight;
-    public float UnitBlockDepth;
-
-    public float DefaultDepth = 0;
-
+{ 
+    // Level blocks
     List<GameObject> Blocks;
 
+    // Texture cache for faster loading times
+    Dictionary<string, Texture> texCache;
+
     // Options
-    public string level;
-
-    public bool load = false;
     public bool save = false;
-    public bool useSaveData = false;
+    public bool reload = false;
 
-    public bool addTags = false;
+    // Tag Manager
+    public bool tagBlocks = false;
+    SerializedObject tagManager;
+    SerializedProperty tagsProp;
 
-    void Start()
+    // Paths
+    public string level;
+    public string spritePath = "Sprites";
+    public string dataPath = "Data";
+    void Awake() 
     {
-        System.IO.Directory.CreateDirectory(Path.Combine(Application.dataPath, "Data"));
-        System.IO.Directory.CreateDirectory(Path.Combine(Application.dataPath, "Save"));
-        System.IO.Directory.CreateDirectory(Path.Combine(Application.dataPath, "Resources"));
-        System.IO.Directory.CreateDirectory(Path.Combine(Application.dataPath, "Resources", "Sprites"));
-        System.IO.Directory.CreateDirectory(Path.Combine(Application.dataPath, "Resources", "Levels"));
+        tagManager = new SerializedObject(AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/TagManager.asset")[0]);
+        tagsProp = tagManager.FindProperty("tags");
 
         Blocks = new List<GameObject>();
+
+        texCache = new Dictionary<string, Texture>();
+
         LoadLevel();
     }
 
+
     private void Update()
     {
-        if (load)
+        if (reload)
         {
             for (int i = 0; i < Blocks.Count; i++)
             {
@@ -46,7 +49,7 @@ public class LevelManager : MonoBehaviour
             Blocks.Clear();
 
             LoadLevel();
-            load = false;
+            reload = false;
         }
 
         if (save)
@@ -58,76 +61,55 @@ public class LevelManager : MonoBehaviour
 
     void LoadLevel()
     {
-        string path = "";
-        if (!useSaveData)
-        {
-            path = "Data";
-        }
-        else
-        {
-            path = "Save";
-        }
         
-        string[] lines = File.ReadAllLines(Path.Combine(Application.dataPath, path, level + ".txt"));
+        float unitBlockWidth = int.MaxValue;
+        string[] lines = File.ReadAllLines(Path.Combine(Application.dataPath, dataPath, level + ".txt"));
         for (int i = 0; i < lines.Length; i++)
         {
             string[] blockParams = lines[i].Split(' ');
 
-            string sprite = blockParams[0];
+            string sprite = blockParams[0].Split('.')[0];
 
-            float x = float.Parse(blockParams[1]) / UnitBlockWidth;
-            float y = float.Parse(blockParams[2]) / UnitBlockHeight;
-            // float z = float.Parse(blockParams[3]) / UnitBlockDepth;
-            float z = 0;
+            float x = float.Parse(blockParams[1]);
+            float y = float.Parse(blockParams[2]);
+            float z = float.Parse(blockParams[3]);
 
-            // float x_rot = float.Parse(blockParams[4]);
-            // float y_rot = float.Parse(blockParams[5]);
-            // float z_rot = float.Parse(blockParams[6]);
-            float x_rot = 0f;
-            float y_rot = 90f;
-            float z_rot = 0f;
+            float x_rot = float.Parse(blockParams[4]);
+            float y_rot = float.Parse(blockParams[5]);
+            float z_rot = float.Parse(blockParams[6]);
 
-            float width = int.Parse(blockParams[3]) / UnitBlockWidth;
-            float height = int.Parse(blockParams[4]) / UnitBlockHeight;
-            float depth = int.Parse(blockParams[3]) / UnitBlockHeight;
-
-
+            float width = float.Parse(blockParams[7]);
+            float height = float.Parse(blockParams[8]);
+            float depth = float.Parse(blockParams[9]);
+        
+            if (width < unitBlockWidth) 
+            {
+                unitBlockWidth = width;
+            }
             CreateBlock(x, y, z, x_rot, y_rot, z_rot, width, height, depth, sprite);
         }
-    }
 
-    void SaveLevel()
-    {
-        using (System.IO.StreamWriter file =
-            new System.IO.StreamWriter(File.Open(Path.Combine(Application.dataPath, "Save", level + ".txt"), FileMode.OpenOrCreate)))
-        {
-            for (int i = 0; i < Blocks.Count; i++)
-            {
-                string sprite = Blocks[i].name;
+        NormalizeBlocks(unitBlockWidth);
 
-                float x = Blocks[i].transform.position.x * UnitBlockWidth;
-                float y = Blocks[i].transform.position.y * UnitBlockHeight;
-                float z = Blocks[i].transform.position.z * UnitBlockDepth;
-
-                float x_rot = Blocks[i].transform.localEulerAngles.x;
-                float y_rot = Blocks[i].transform.localEulerAngles.y;
-                float z_rot = Blocks[i].transform.localEulerAngles.z;
-
-                float width = Blocks[i].transform.localScale.x * UnitBlockWidth;
-                float height = Blocks[i].transform.localScale.y * UnitBlockHeight;
-                float depth = Blocks[i].transform.localScale.z * UnitBlockDepth;
-
-                string line = string.Format("{0} {1} {2} {3} {4} {5} {6} {7} {8} {9}", sprite, x, y, z, x_rot, y_rot, z_rot, width, height, depth);
-                file.WriteLine(line);
-            }
-        }
+        reload = true;
     }
 
 
     void CreateBlock(float x, float y, float z, float x_rot, float y_rot, float z_rot, float width, float height, float depth, string sprite, PrimitiveType type=PrimitiveType.Cube)
     {
         GameObject block = GameObject.CreatePrimitive(type);
-        block.GetComponent<MeshRenderer>().material.mainTexture = Resources.Load<Texture>("Sprites/" + sprite.Split('.')[0]);
+
+        if (texCache.ContainsKey(sprite)) 
+        {
+            block.GetComponent<MeshRenderer>().material.mainTexture = texCache[sprite];
+        }
+        else 
+        {
+            Texture tex =  Resources.Load<Texture>(Path.Combine(spritePath,  sprite));
+
+            block.GetComponent<MeshRenderer>().material.mainTexture = tex;
+            texCache.Add(sprite, tex);
+        }
 
         block.transform.position = new Vector3(x, y, z);
         block.transform.eulerAngles = new Vector3(x_rot, y_rot, z_rot);
@@ -135,22 +117,45 @@ public class LevelManager : MonoBehaviour
 
         block.name = sprite;
 
-        if (addTags)
+        if (tagBlocks)
         {
-            AddTag(sprite);
+            CreateTag(sprite);
             block.tag = sprite;
         }
-
+        
         Blocks.Add(block);
+
     }
 
 
-    void AddTag(string sprite)
+    void NormalizeBlocks(float unitBlockWidth) 
     {
-        // Open tag manager
-        SerializedObject tagManager = new SerializedObject(AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/TagManager.asset")[0]);
-        SerializedProperty tagsProp = tagManager.FindProperty("tags");
+        for (int i = 0; i < Blocks.Count; i++) 
+        {
+            Vector3 scale = Blocks[i].transform.localScale;
+            Vector3 position = Blocks[i].transform.position;
 
+            Vector3 normalizedScale = new Vector3 
+            (
+                scale.x / unitBlockWidth,
+                scale.y / unitBlockWidth,
+                scale.z / unitBlockWidth
+            );
+            
+            Vector3 normalizedPosition = new Vector3 
+            (
+                position.x / unitBlockWidth,
+                position.y / unitBlockWidth,
+                position.z / unitBlockWidth
+            );
+
+            Blocks[i].transform.localScale = normalizedScale;
+            Blocks[i].transform.position = normalizedPosition;
+        }
+    }
+
+    void CreateTag(string sprite)
+    {
         bool found = false;
         for (int i = 0; i < tagsProp.arraySize; i++)
         {
@@ -168,5 +173,33 @@ public class LevelManager : MonoBehaviour
             n.stringValue = sprite;
         }
         tagManager.ApplyModifiedProperties();
+    }
+
+    void SaveLevel()
+    {
+        using (System.IO.StreamWriter file =
+            new System.IO.StreamWriter(File.Open(Path.Combine(Application.dataPath, "Data", level + ".txt"), FileMode.OpenOrCreate)))
+        {
+            for (int i = 0; i < Blocks.Count; i++)
+            {
+                string sprite = Blocks[i].name;
+
+                float x = Blocks[i].transform.position.x;
+                float y = Blocks[i].transform.position.y;
+                float z = Blocks[i].transform.position.z;
+
+                float x_rot = Blocks[i].transform.localEulerAngles.x;
+                float y_rot = Blocks[i].transform.localEulerAngles.y;
+                float z_rot = Blocks[i].transform.localEulerAngles.z;
+
+                float width = Blocks[i].transform.localScale.x;
+                float height = Blocks[i].transform.localScale.y;
+                float depth = Blocks[i].transform.localScale.z;
+
+                string line = string.Format("{0} {1} {2} {3} {4} {5} {6} {7} {8} {9}", sprite, x, y, z, x_rot, y_rot, z_rot, width, height, depth);
+                file.WriteLine(line);
+            }
+        }
+        Debug.Log("Saved");
     }
 }

@@ -240,15 +240,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f579d9ea74a1d40928398685a3cfc123, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  UnitBlockWidth: 16
-  UnitBlockHeight: 16
-  UnitBlockDepth: 16
-  DefaultDepth: 16
   level: 1-1
-  load: 0
   save: 0
-  useSaveData: 0
-  addTags: 0
+  reload: 0
+  tagBlocks: 1
 --- !u!4 &358405074
 Transform:
   m_ObjectHideFlags: 0
