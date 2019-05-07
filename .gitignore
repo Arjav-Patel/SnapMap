@@ -37,6 +37,6 @@ sysinfo.txt
 
 # Other
 .DS_STORE
-Levels/
-Sprites/
-Data/
+Assets/Resources/Levels/
+Assets/Resources/Sprites/
+Assets/Data/

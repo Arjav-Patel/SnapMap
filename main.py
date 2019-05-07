@@ -153,9 +153,9 @@ def entrypoint(levels_path, sprites_path, data_path, multiscale):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     
-    parser.add_argument("--levels_path", default='./Levels/')
-    parser.add_argument("--sprites_path", default='./Sprites/')
-    parser.add_argument('--data_path', default='./Data/')
+    parser.add_argument("--levels_path", default='./Assets/Resources/Levels/')
+    parser.add_argument("--sprites_path", default='./Assets/Resources/Sprites/')
+    parser.add_argument('--data_path', default='./Assets/Data/')
     parser.add_argument('--multiscale', default=False)
 
     args = parser.parse_args()
