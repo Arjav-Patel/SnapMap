@@ -25,6 +25,7 @@ public class LevelManager : MonoBehaviour
     public string level;
     public string spritePath = "Sprites";
     public string dataPath = "Data";
+    
     void Awake() 
     {
         tagManager = new SerializedObject(AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/TagManager.asset")[0]);
