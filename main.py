@@ -1,6 +1,6 @@
 import sys
 
-from os import listdir
+from os import listdir, remove
 from os.path import isfile, join
 
 import argparse
@@ -87,7 +87,7 @@ def multiscale_template_match(img, template, method, threshold):
 
 
 
-def save_matched_templates(img, template, loc, save, color, thickness):
+def save_matched_template_as_img(img, template, loc, save, color, thickness):
     template_height, template_width = template.shape[:2]
     
     for pt in loc:
@@ -96,8 +96,21 @@ def save_matched_templates(img, template, loc, save, color, thickness):
     cv2.imwrite(save, img)
 
 
+def save_matched_template_as_txt(img, template, template_name, loc, save):
+    img_height, img_width = img.shape[:2]
+    template_height, template_width = template.shape[:2]
 
-def main(levels_path, sprites_path):
+    with open(save, 'a') as f:
+        for pt in loc:
+            f.write('{} {} {} {} {}\n'.format(
+                template_name,
+                pt[0],
+                img_height - template_height - pt[1],
+                template_width,
+                template_height
+            ))
+
+def main(levels_path, sprites_path, data_path, multiscale):
     image_types = set(['jpg', 'jpeg', 'png', 'tif', 'gif'])
 
     levels = [level for level in listdir(levels_path) 
@@ -109,35 +122,44 @@ def main(levels_path, sprites_path):
                and sprite.split('.')[-1] in image_types]
     
     for level in levels:
+        level_name = level.split('.')[0]
         level_img = cv2.imread(join(levels_path, level))
         
+        if isfile(join(data_path, level_name + '.txt')):
+            remove(join(data_path, level_name + '.txt'))
+
         for sprite in tqdm(sprites):
             sprite_img = cv2.imread(join(sprites_path, sprite))
             
             loc = template_match(level_img, sprite_img, cv2.TM_CCOEFF_NORMED, 0.8)
             if loc:
-                save_matched_templates(level_img, sprite_img, loc, join(levels_path, 'Templates', level), (255, 0, 0), 1)
-            else:
+                save_matched_template_as_txt(level_img, sprite_img, sprite, loc, join(data_path, level_name + '.txt'))
+
+                save_matched_template_as_img(level_img, sprite_img, loc, join(levels_path, 'Templates', level), (255, 0, 0), 1)
+            elif multiscale:
                 _, scale, sprite_img, loc = multiscale_template_match(level_img, sprite_img, cv2.TM_CCOEFF_NORMED, 0.8)
 
                 if loc:
-                    save_matched_templates(level_img, sprite_img, loc, join(levels_path, 'Templates', level), (255, 0, 0), 1)
+                    save_matched_template_as_txt(level_img, sprite_img, sprite, loc, join(data_path, level_name + '.txt'))
+                    
 
 
 
-def entrypoint(levels_path, sprites_path):
-    main(levels_path, sprites_path)
+def entrypoint(levels_path, sprites_path, data_path, multiscale):
+    main(levels_path, sprites_path, data_path, multiscale)
 
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     
-    parser.add_argument("levels_path")
-    parser.add_argument("sprites_path")
-    
+    parser.add_argument("--levels_path", default='./Levels/')
+    parser.add_argument("--sprites_path", default='./Sprites/')
+    parser.add_argument('--data_path', default='./Data/')
+    parser.add_argument('--multiscale', default=False)
+
     args = parser.parse_args()
     
-    entrypoint(args.levels_path, args.sprites_path)
+    entrypoint(args.levels_path, args.sprites_path, args.data_path, args.multiscale)
 
 
