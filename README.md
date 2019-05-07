@@ -20,3 +20,8 @@ After this is done, a .txt file of the level data will be saved in *Assets/Data*
 Load the project in Unity, the Level GameObject's inspector has a property called *level*. Type in the name of the level you want to load, and hit play.
 
 If you move, rotate, or rescale the blocks, hit the save button in the inspector of the Level GameObject, to preserve these changes. Hitting reload will take you back to your last save point.
+
+<p align="center">
+  <img src="https://i.imgur.com/oMQSi5g.png">
+  <img src="https://i.imgur.com/uqbYoPp.png" width="671" height="223">
+</p>
