@@ -2,6 +2,7 @@
 Tool to automatically import level maps in Unity with corresponding map/sprite pictures.
 
 ### This might be useful to you if
+   *  You need a replica of a 2D game to develop game AI
    *  You want to recreate 2D games (Mario, Zelda, etc), and focus solely on game logic, not game design
    *  You want to quickly prototype 2D levels, and want to use Photoshop, Paint, or some other photo editor instead of Unity
 
