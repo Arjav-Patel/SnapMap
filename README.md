@@ -22,6 +22,7 @@ Load the project in Unity, the Level GameObject's inspector has a property calle
 
 If you move, rotate, or rescale the blocks, hit the save button in the inspector of the Level GameObject, to preserve these changes. Hitting reload will take you back to your last save point.
 
+To reimport assets run `./reimport.sh`
 <p align="center">
   <img src="https://i.imgur.com/oMQSi5g.png">
   <img src="https://i.imgur.com/uqbYoPp.png" width="671" height="223">
